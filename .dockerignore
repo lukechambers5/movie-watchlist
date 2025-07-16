@@ -1,6 +1,21 @@
+# Build outputs
 target/
-*.class
-*.log
-*.iml
+build/
+
+# IDE files
 .idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+
+# Docs and extras
 *.md
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local dev config
+src/main/resources/application.properties
