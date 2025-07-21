@@ -41,7 +41,9 @@ public class S3Service {
             // If no exception, file exists — return existing URL
             return s3Url;
 
-        } catch (NoSuchKeyException | S3Exception e) {
+        } catch (NoSuchKeyException e) {
+            // 404 Not Found — continue to upload
+        } catch (S3Exception e) {
             if (e.statusCode() != 404) {
                 throw e;
             }
