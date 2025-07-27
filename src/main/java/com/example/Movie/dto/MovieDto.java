@@ -1,19 +1,103 @@
 package com.example.Movie.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class MovieDto {
-    private String movieId;       // TMDb ID
+    private String movieId;
     private String title;
     private String posterUrl;
     private String overview;
-    private String genres;        // Optional: comma-separated names
+    private String genres;
     private String releaseDate;
-    private String userId;        // Added after decoding JWT
+    private String userId;
     private String actors;
+    private String thumbnailUrl;
+    private double popularityScore;
+    private String actorClassification;
+
+    public String getMovieId() {
+        return movieId;
+    }
+
+    public void setMovieId(String movieId) {
+        this.movieId = movieId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
+
+    public String getOverview() {
+        return overview;
+    }
+
+    public void setOverview(String overview) {
+        this.overview = overview;
+    }
+
+    public String getGenres() {
+        return genres;
+    }
+
+    public void setGenres(String genres) {
+        this.genres = genres;
+    }
+
+    public String getReleaseDate() {
+        return releaseDate;
+    }
+
+    public void setReleaseDate(String releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getActors() {
+        return actors;
+    }
+
+    public void setActors(String actors) {
+        this.actors = actors;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public double getPopularityScore() {
+        return popularityScore;
+    }
+
+    public void setPopularityScore(double popularityScore) {
+        this.popularityScore = popularityScore;
+    }
+
+    public String getActorClassification() {
+        return actorClassification;
+    }
+
+    public void setActorClassification(String actorClassification) {
+        this.actorClassification = actorClassification;
+    }
 }

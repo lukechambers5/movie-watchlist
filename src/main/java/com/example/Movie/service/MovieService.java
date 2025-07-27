@@ -93,9 +93,23 @@ public class MovieService {
         // Call Lambda to enrich metadata
         lambdaService.invokeMetadataEnrichment(dto, s3PosterUrl);
 
+        MovieDto enriched = null;
+        int attempts = 0;
+        int maxAttempts = 5;
 
-
-        return "Movie added to watchlist.";
+        while (attempts < maxAttempts) {
+            enriched = dynamoDbService.getMovieForUser(userId, dto.getMovieId());
+            if (enriched.getActorClassification() != null && enriched.getThumbnailUrl() != null) {
+                break;
+            }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            attempts++;
+        }
+        return enriched != null ? "Movie added with enrichment." : "Movie added (partial).";
     }
 
     public List<MovieDto> getWatchlist(String userId) {

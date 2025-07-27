@@ -29,7 +29,7 @@ public class SecurityConfig {
                         .requestMatchers("/watchlist/**").permitAll() // allow this for now
                         .anyRequest().authenticated()
                 )
-                //.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin().disable()
                 .httpBasic().disable();
 

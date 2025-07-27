@@ -36,6 +36,20 @@ public class DynamoDbService {
         dynamoDbClient.putItem(request);
     }
 
+    public String deleteMovie(String userId, String movieId) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put("user_id", AttributeValue.fromS(userId));
+        key.put("movie_id", AttributeValue.fromS(movieId));
+
+        DeleteItemRequest request = DeleteItemRequest.builder()
+                .tableName(tableName)
+                .key(key)
+                .build();
+
+        dynamoDbClient.deleteItem(request);
+        return "Movie deleted.";
+    }
+
     public List<MovieDto> getMoviesForUser(String userId) {
         Map<String, AttributeValue> eav = new HashMap<>();
         eav.put(":uid", AttributeValue.fromS(userId));
@@ -58,25 +72,66 @@ public class DynamoDbService {
             movie.setGenres(item.get("genres").s());
             movie.setReleaseDate(item.get("release_date").s());
             movie.setUserId(userId);
-            movie.setActors(item.getOrDefault("actors", AttributeValue.fromS("")).s()); // safe fallback
+            movie.setActors(item.getOrDefault("actors", AttributeValue.fromS("")) != null
+                    ? item.get("actors").s() : "");
+
+            if (item.containsKey("thumbnail_url") && item.get("thumbnail_url").s() != null) {
+                movie.setThumbnailUrl(item.get("thumbnail_url").s());
+            }
+            if (item.containsKey("popularity_score") && item.get("popularity_score").n() != null) {
+                try {
+                    movie.setPopularityScore(Double.parseDouble(item.get("popularity_score").n()));
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid popularity_score: " + item.get("popularity_score").n());
+                }
+            }
+            if (item.containsKey("actor_classification") && item.get("actor_classification").s() != null) {
+                movie.setActorClassification(item.get("actor_classification").s());
+            }
+
             movies.add(movie);
         }
-
-
         return movies;
     }
 
-    public String deleteMovie(String userId, String movieId) {
+    public MovieDto getMovieForUser(String userId, String movieId) {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put("user_id", AttributeValue.fromS(userId));
         key.put("movie_id", AttributeValue.fromS(movieId));
 
-        DeleteItemRequest request = DeleteItemRequest.builder()
+        GetItemRequest request = GetItemRequest.builder()
                 .tableName(tableName)
                 .key(key)
                 .build();
 
-        dynamoDbClient.deleteItem(request);
-        return "Movie deleted.";
+        Map<String, AttributeValue> item = dynamoDbClient.getItem(request).item();
+        if (item == null || item.isEmpty()) return null;
+
+        MovieDto movie = new MovieDto();
+        movie.setMovieId(movieId);
+        movie.setUserId(userId);
+        movie.setTitle(item.get("title").s());
+        movie.setPosterUrl(item.get("poster_url").s());
+        movie.setOverview(item.get("overview").s());
+        movie.setGenres(item.get("genres").s());
+        movie.setReleaseDate(item.get("release_date").s());
+        movie.setActors(item.getOrDefault("actors", AttributeValue.fromS("")).s());
+
+        if (item.containsKey("thumbnail_url")) {
+            movie.setThumbnailUrl(item.get("thumbnail_url").s());
+        }
+        if (item.containsKey("popularity_score")) {
+            try {
+                movie.setPopularityScore(Double.parseDouble(item.get("popularity_score").n()));
+            } catch (NumberFormatException e) {
+                movie.setPopularityScore(0.0);
+            }
+        }
+        if (item.containsKey("actor_classification")) {
+            movie.setActorClassification(item.get("actor_classification").s());
+        }
+
+        return movie;
     }
+
 }
