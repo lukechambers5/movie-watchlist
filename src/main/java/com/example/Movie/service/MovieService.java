@@ -27,41 +27,54 @@ public class MovieService {
         this.s3Service = s3Service;
         this.lambdaService = lambdaService;
     }
-
-    public String addMovieToWatchlist(String title, String userId) {
+    public List<Map<String, Object>> searchMovies(String title) {
         String url = String.format("%s/search/movie?query=%s&api_key=%s", apiUrl, title, apiKey);
         RestTemplate restTemplate = new RestTemplate();
         Map result = restTemplate.getForObject(url, Map.class);
-        List<Map> movies = (List<Map>) result.get("results");
+        List<Map<String, Object>> movies = (List<Map<String, Object>>) result.get("results");
 
         if (movies == null || movies.isEmpty()) {
-            return "Movie not found.";
+            return Collections.emptyList();
         }
 
-        Map<String, Object> movie = movies.get(0);
-        String movieId = String.valueOf(movie.get("id"));
+        // Return a simplified list (id, title, release_date, poster)
+        List<Map<String, Object>> simplifiedResults = new ArrayList<>();
+        for (Map<String, Object> movie : movies) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", movie.get("id"));
+            item.put("title", movie.get("title"));
+            item.put("release_date", movie.get("release_date"));
+            item.put("poster_path", movie.get("poster_path"));
+            simplifiedResults.add(item);
+        }
 
-        List<Integer> genreIds = (List<Integer>) movie.get("genre_ids");
+        return simplifiedResults;
+    }
+
+    public String addMovieToWatchlistById(String movieId, String userId) {
+        String movieUrl = String.format("%s/movie/%s?api_key=%s", apiUrl, movieId, apiKey);
+        String creditsUrl = String.format("%s/movie/%s/credits?api_key=%s", apiUrl, movieId, apiKey);
         String genreUrl = String.format("%s/genre/movie/list?api_key=%s", apiUrl, apiKey);
-        Map genreResponse = restTemplate.getForObject(genreUrl, Map.class);
-        List<Map<String, Object>> genresList = (List<Map<String, Object>>) genreResponse.get("genres");
 
+        RestTemplate restTemplate = new RestTemplate();
+
+        Map movie = restTemplate.getForObject(movieUrl, Map.class);
+        Map creditsResponse = restTemplate.getForObject(creditsUrl, Map.class);
+        Map genreResponse = restTemplate.getForObject(genreUrl, Map.class);
+
+        List<Map<String, Object>> genresList = (List<Map<String, Object>>) genreResponse.get("genres");
         Map<Integer, String> genreMap = new HashMap<>();
         for (Map<String, Object> genre : genresList) {
             genreMap.put((Integer) genre.get("id"), (String) genre.get("name"));
         }
 
+        List<Map<String, Object>> genreObjects = (List<Map<String, Object>>) movie.get("genres");
         List<String> genreNames = new ArrayList<>();
-        for (Integer id : genreIds) {
-            if (genreMap.containsKey(id)) {
-                genreNames.add(genreMap.get(id));
-            }
+        for (Map<String, Object> genre : genreObjects) {
+            genreNames.add((String) genre.get("name"));
         }
 
-        String creditsUrl = String.format("%s/movie/%s/credits?api_key=%s", apiUrl, movieId, apiKey);
-        Map creditsResponse = restTemplate.getForObject(creditsUrl, Map.class);
         List<Map<String, Object>> cast = (List<Map<String, Object>>) creditsResponse.get("cast");
-
         List<String> actors = new ArrayList<>();
         for (int i = 0; i < Math.min(5, cast.size()); i++) {
             actors.add((String) cast.get(i).get("name"));
@@ -76,27 +89,22 @@ public class MovieService {
         dto.setReleaseDate((String) movie.get("release_date"));
         dto.setUserId(userId);
         dto.setActors(String.join(", ", actors));
+        dto.setRating(((Number) movie.get("vote_average")).doubleValue());
 
-        // Upload to S3 and get the new URL
         String s3PosterUrl = "";
         try {
             s3PosterUrl = s3Service.uploadPoster(dto.getMovieId(), dto.getPosterUrl());
         } catch (IOException e) {
-            e.printStackTrace(); // or log.error(...) — up to you
+            e.printStackTrace();
             return "Failed to upload poster to S3.";
         }
 
-
-        // Save the movie to DynamoDB
         dynamoDbService.saveMovie(dto);
-
-        // Call Lambda to enrich metadata
         lambdaService.invokeMetadataEnrichment(dto, s3PosterUrl);
 
         MovieDto enriched = null;
         int attempts = 0;
         int maxAttempts = 5;
-
         while (attempts < maxAttempts) {
             enriched = dynamoDbService.getMovieForUser(userId, dto.getMovieId());
             if (enriched.getActorClassification() != null && enriched.getThumbnailUrl() != null) {
@@ -109,6 +117,7 @@ public class MovieService {
             }
             attempts++;
         }
+
         return enriched != null ? "Movie added with enrichment." : "Movie added (partial).";
     }
 

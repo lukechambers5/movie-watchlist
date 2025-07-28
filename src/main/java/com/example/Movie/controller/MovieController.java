@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.*;
+
+
 @RestController
 @RequestMapping("/watchlist")
 public class MovieController {
@@ -15,10 +18,15 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
+    @GetMapping("/search")
+    public List<Map<String, Object>> searchMovies(@RequestParam String title) {
+        return movieService.searchMovies(title);
+    }
+
     @PostMapping
-    public String addMovie(@RequestParam String title) {
+    public String addMovie(@RequestParam String movieId) {
         String userId = getCurrentUserEmail();
-        return movieService.addMovieToWatchlist(title, userId);
+        return movieService.addMovieToWatchlistById(movieId, userId);
     }
 
     @GetMapping

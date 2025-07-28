@@ -12,6 +12,16 @@ public class MovieDto {
     private String thumbnailUrl;
     private double popularityScore;
     private String actorClassification;
+    private double rating;
+
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
 
     public String getMovieId() {
         return movieId;

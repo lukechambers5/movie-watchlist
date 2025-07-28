@@ -24,7 +24,7 @@ public class LambdaService {
             payload.put("user_id", dto.getUserId());
             payload.put("movie_id", dto.getMovieId());
             payload.put("title", dto.getTitle());
-            payload.put("rating", 8.8); // optionally fetch this dynamically
+            payload.put("rating", dto.getRating());
             payload.put("genre", dto.getGenres().split(",")[0]);
             payload.put("release_year", Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
             payload.put("actors", Arrays.asList(dto.getActors().split(", ")));

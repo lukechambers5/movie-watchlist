@@ -13,6 +13,8 @@ import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import jakarta.servlet.http.HttpServletResponse;
+import java.security.Principal;
+import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -37,10 +39,10 @@ public class AuthController {
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)
-                .secure(true) // Set to false for local dev without HTTPS
+                .secure(false) // Set to false for local dev without HTTPS
                 .path("/")
                 .maxAge(24 * 60 * 60) // 1 day expiration
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -61,10 +63,10 @@ public class AuthController {
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)
-                .secure(true) // Set to false for local dev without HTTPS
+                .secure(false) // Set to false for local dev without HTTPS
                 .path("/")
                 .maxAge(24 * 60 * 60)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -88,8 +90,17 @@ public class AuthController {
     }
 
     @GetMapping("/check")
-    public ResponseEntity<?> check() {
-        // If request passes JwtAuthFilter and reaches here, JWT is valid
-        return ResponseEntity.ok("Authenticated");
+    public ResponseEntity<?> check(Principal principal) {
+        if (principal == null || principal.getName().equals("anonymousUser")) {
+            return ResponseEntity.status(401).body("Not logged in");
+        }
+
+        // Optional: check if user exists in DB for extra safety
+        Optional<User> user = userRepository.findByEmail(principal.getName());
+        if (user.isEmpty()) {
+            return ResponseEntity.status(401).body("User not found");
+        }
+
+        return ResponseEntity.ok().body(Map.of("user", principal.getName()));
     }
 }
