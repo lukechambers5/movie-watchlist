@@ -19,7 +19,9 @@ public class User {
         return email;
     }
 
-
+    public Long getId() {
+        return id;
+    }
     @Column(nullable = false)
     private String passwordHash;
 

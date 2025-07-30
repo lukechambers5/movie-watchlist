@@ -39,13 +39,14 @@ public class AuthController {
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)
-                .secure(false) // Set to false for local dev without HTTPS
+                .secure(true)
                 .path("/")
                 .maxAge(24 * 60 * 60) // 1 day expiration
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
 
         return ResponseEntity.ok("Registration successful");
     }
@@ -63,13 +64,13 @@ public class AuthController {
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)
-                .secure(false) // Set to false for local dev without HTTPS
+                .secure(true)
                 .path("/")
-                .maxAge(24 * 60 * 60)
-                .sameSite("Lax")
+                .maxAge(24 * 60 * 60) // 1 day expiration
+                .sameSite("None")
                 .build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok("Login successful");
     }
@@ -81,7 +82,7 @@ public class AuthController {
                 .secure(true) // match the flags of your other cookies
                 .path("/")
                 .maxAge(0) // deletes cookie immediately
-                .sameSite("Strict")
+                .sameSite("None")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

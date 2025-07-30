@@ -4,6 +4,7 @@ import com.example.Movie.dto.MovieDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.util.stream.Collectors;
 
 import java.io.IOException;
 
@@ -128,4 +129,63 @@ public class MovieService {
     public String removeMovieFromWatchlist(String movieId, String userId) {
         return dynamoDbService.deleteMovie(userId, movieId);
     }
+
+    public List<MovieDto> fetchRecommendations(Set<String> genres, Set<String> actors, List<MovieDto> excludeList) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            // Convert genre names to IDs
+            String genreUrl = String.format("%s/genre/movie/list?api_key=%s", apiUrl, apiKey);
+            Map genreResponse = restTemplate.getForObject(genreUrl, Map.class);
+            List<Map<String, Object>> genreList = (List<Map<String, Object>>) genreResponse.get("genres");
+
+            Map<String, String> genreNameToId = new HashMap<>();
+            for (Map<String, Object> genre : genreList) {
+                genreNameToId.put(((String) genre.get("name")).toLowerCase(), String.valueOf(genre.get("id")));
+            }
+
+            Set<String> genreIds = new HashSet<>();
+            for (String g : genres) {
+                String id = genreNameToId.get(g.trim().toLowerCase());
+                if (id != null) genreIds.add(id);
+            }
+
+            // Build TMDb discover URL using genre filters
+            String discoverUrl = String.format("%s/discover/movie?api_key=%s&sort_by=popularity.desc", apiUrl, apiKey);
+            if (!genreIds.isEmpty()) {
+                discoverUrl += "&with_genres=" + String.join(",", genreIds);
+            }
+
+            Map result = restTemplate.getForObject(discoverUrl, Map.class);
+            List<Map<String, Object>> results = (List<Map<String, Object>>) result.get("results");
+
+            // Exclude movies already in the user's watchlist
+            Set<String> excludeIds = excludeList.stream()
+                    .map(MovieDto::getMovieId)
+                    .collect(Collectors.toSet());
+
+            List<MovieDto> suggestions = new ArrayList<>();
+            for (Map<String, Object> movie : results) {
+                String id = String.valueOf(movie.get("id"));
+                if (excludeIds.contains(id)) continue;
+
+                MovieDto dto = new MovieDto();
+                dto.setMovieId(id);
+                dto.setTitle((String) movie.get("title"));
+                dto.setPosterUrl("https://image.tmdb.org/t/p/w500" + movie.get("poster_path"));
+                dto.setOverview((String) movie.get("overview"));
+                dto.setReleaseDate((String) movie.get("release_date"));
+                dto.setRating(movie.get("vote_average") instanceof Number ? ((Number) movie.get("vote_average")).doubleValue() : 0.0);
+                suggestions.add(dto);
+            }
+
+            return suggestions;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();  // Return empty list on error to avoid 500
+        }
+    }
+
+
+
 }

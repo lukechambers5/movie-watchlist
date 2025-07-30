@@ -40,43 +40,31 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-        if (path.equals("/auth/login") || path.equals("/auth/register") || path.equals("/auth/logout")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        String jwt = null;
 
-
-        String token = getJwtFromCookies(request);
-        String email = null;
-
-        if (token != null) {
-            try {
-                email = jwtUtils.extractUsername(token);
-            } catch (ExpiredJwtException e) {
-                System.out.println("JWT expired: " + e.getMessage());
-            } catch (Exception e) {
-                System.out.println("JWT error: " + e.getMessage());
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals("jwt")) {
+                    jwt = cookie.getValue();
+                    break;
+                }
             }
         }
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            try {
+        if (jwt != null) {
+            String email = jwtUtils.extractUsername(jwt);
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-
-                if (jwtUtils.isTokenValid(token, userDetails)) {
+                if (jwtUtils.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
-            } catch (Exception e) {
-                System.out.println("Error loading user: " + e.getMessage());
             }
         }
 
-
         filterChain.doFilter(request, response);
     }
+
 }

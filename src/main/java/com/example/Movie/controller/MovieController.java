@@ -43,6 +43,8 @@ public class MovieController {
 
     private String getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Auth in Controller: " + authentication);
+
         return authentication.getName(); // the username/email extracted from JWT by JwtAuthFilter
     }
 }
