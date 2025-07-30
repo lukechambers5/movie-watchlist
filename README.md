@@ -31,6 +31,18 @@ The CineScope backend is tightly integrated with several AWS services to ensure 
 
 ---
 
+## 🌐 Live Site
+
+### 🔗 Website  (Deployed)
+**URL:**  
+[**🔵 https://lukechambers5.github.io/movie-frontend**](https://lukechambers5.github.io/movie-frontend)
+
+---
+
+### Frontend GitHub Repository
+[➡️ github.com/lukechambers5/movie-frontend](https://github.com/lukechambers5/movie-frontend)
+
+
 ## Movie Enrichment with AWS Lambda
 - **Language:** Python (in Lambda)
 - **Purpose:** Analyze movie data (e.g., actor, genre, year, rating) and enrich watchlist items
